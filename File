@@ -1,0 +1,125 @@
+File类学习：
+1、特殊符号
+  .   当前目录
+  ..  上级目录
+  
+2、getPath getAbsolutePath getCanonicalPath 区别
+    1、getPath()：
+    返回定义时的路径，（就是你写什么路径，他就返回什么路径）
+    2、getAbsolutePath()：
+    返回绝对路径，但不会处理“.”和“..”的情况
+    3、getCanonicalPath()：
+    返回的是规范化的绝对路径，相当于将getAbsolutePath()中的“.”和“..”解析成对应的正确的路径
+    第一个例子：（使用：“.\\src\\test.txt”一个点路径）
+    File file = new File(".\\src\\test.txt");
+     System.out.println(file.getPath());
+     System.out.println(file.getAbsolutePath());
+     System.out.println( file.getCanonicalPath());
+      结果：.\src\test.txt
+          D:\workspace\java_io\.\src\test.txt
+          D:\workspace\java_io\src\test.txt
+      第二个例子：（使用：“..\\src\\test.txt”两个点路径）
+    File file = new File("..\\src\\test.txt"); 
+      System.out.println(file.getPath());
+      System.out.println(file.getAbsolutePath());
+      System.out.println( file.getCanonicalPath());
+    结果：
+    ..\src\test.txt
+    D:\workspace\java_io\..\src\test.txt
+    D:\workspace\src\test.txt 注意这个结果的路径，与一个点时不一样；因为他解析了“.”和“..”的情况。
+    第三个例子：（使用：“D:\\test\\absoluteTest.txt”绝对路径）
+    File file = new File("D:\\test\\absoluteTest.txt");
+      System.out.println(file.getPath());
+      System.out.println(file.getAbsolutePath());
+      System.out.println(file.getCanonicalPath());
+    结果：
+    D:\test\absoluteTest.txt
+    D:\test\absoluteTest.txt
+    D:\test\absoluteTest.txt
+结论：
+1、当输入为绝对路径时，返回的都是绝对路径。
+2、当输入为相对路径时：
+2.1、getPath()返回的是File构造方法里的路径，是什么就是什么，不增不减
+2.2、getAbsolutePath()返回的其实是user.dir+getPath()的内容，从上面看：D:\workspace\java_io\.\src\test.txt，D:\workspace\java_io\..\src\test.txt，可以得出。
+2.3、getCanonicalPath()返回的就是标准的将符号完全解析的路径  
+  
+3、getAbsolutePath和 getAbsoluteFile区别
+getAbsoluteFile()返回的是一个File类对象，这个File对象表示是当前File对象的绝对路径名形式
+getAbsolutePath()返回的是一个字符串，这个字符串就是当前File对象的绝对路径名的字符串形式
+
+
+4、图片移动和图片去重
+package com.stu;
+
+import org.apache.commons.codec.digest.DigestUtils;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
+
+/**
+ * @Description:
+ * @author: wb-qhg550103
+ * @Date: 2019-06-07
+ */
+
+public class FileDome {
+
+
+    public static void moveFile(File file) throws IOException {
+        File tar = new File("/Users/quanhouguo/Documents/工作目录/newAllPicture/" + UUID.randomUUID() + ".jpg");
+        if (!file.isDirectory()) {
+            boolean ds_store = file.toString().toLowerCase().endsWith("jpg");
+            if (ds_store) {
+                FileUtils.copyFile(file, tar);
+                System.out.println(file.getAbsolutePath());
+            }
+        } else {
+            File[] files = file.listFiles();
+            for (File f1 : files) {
+                moveFile(f1);
+            }
+        }
+
+    }
+
+    public static void deleteFile() throws IOException {
+        File file = new File("/Users/quanhouguo/Documents/工作目录/newAllPicture");
+        Map<String, File> map = new HashMap<String, File>();
+        File[] files = file.listFiles();
+        for (File f :files) {
+            FileInputStream fis = new FileInputStream(f);
+            String s = DigestUtils.md5Hex(IOUtils.toByteArray(fis));
+            if (map.containsKey(s)) {
+                System.out.println(f.getAbsolutePath());
+                FileUtils.forceDelete(f);
+            }
+            map.put(s, f);
+
+            fis.close();
+        }
+
+
+    }
+
+    public static void main(String[] args) throws IOException {
+        File file = new File("/Users/quanhouguo/Documents/工作目录/testPicture");
+        //moveFile(file);
+        deleteFile();
+    }
+
+
+}
+
+ 
+ 
+ 
+ 
+ 
+  

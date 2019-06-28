@@ -1,0 +1,59 @@
+本文介绍了spring cloud Feign使用中遇到的问题总结，分享给大家，具体如下：
+
+问题一：
+在前面的示例中，我们讲过
+
+@RequestMapping(value = "/user/{id}", method = RequestMethod.GET) 
+@GetMapping("/user/{id}")
+这两个注解的效果是等价的，但是在Feign使用中，只能用上面的那种方式，不能直接用@GetMapping，下面我们将前面的那个示例中，
+改成@GetMapping注解看下效果，我们发现，修改注解后重新启动服务的时候，抛了如下异常：
+复制代码 代码如下:
+
+Caused by: java.lang.IllegalStateException: Method findById not annotated with HTTP method type (ex. GET, POST)  
+异常的意思是，我们没有指定HTTP的方法
+问题二：
+在前面的示例中，我们暴漏Restful服务的方式如下：
+
+@GetMapping("/template/{id}") 
+  public User findById(@PathVariable Long id) { 
+    return client.findById(id); 
+  }
+这里，findById方法的参数中，我们直接使用了
+
+@PathVariable Long id
+下面我们将Feign的方式也改成这种
+
+@RequestMapping(value = "/user/{id}", method = RequestMethod.GET) 
+  User findById(@PathVariable Long id); 
+然后启动服务，我们发现，又抛异常了，异常信息如下：
+复制代码 代码如下:
+
+Caused by: java.lang.IllegalStateException: PathVariable annotation was empty on param 0.  
+大概的意思是PathVariable注解的第一个参数不能为空，我们改成如下的方式：
+
+@RequestMapping(value = "/user/{id}", method = RequestMethod.GET) 
+  User findById(@PathVariable("id") Long id);
+再启动，发现一切都ok了。
+问题三：多参数问题
+
+@RequestMapping(value="/user/name", method=RequestMethod.GET) 
+  User findByUsername(final String userName, final String address);
+启动服务的时候，会报如下异常：
+Caused by: java.lang.IllegalStateException: Method has too many Body parameters: public abstract 
+com.chhliu.springboot.restful.vo.User com.chhliu.springboot.restful.feignclient.UserFeignClient.
+findByUsername(java.lang.String,java.lang.String) 
+
+异常原因：当使用Feign时，如果发送的是get请求，那么需要在请求参数前加上@RequestParam注解修饰，Controller里面可以不加该注解修饰。
+上面问题的解决方案如下：
+
+@RequestMapping(value="/user/name", method=RequestMethod.GET) 
+  User findByUsername(@RequestParam("userName") final String userName, @RequestParam("address") final String address);
+
+问题四：Request method 'POST' not supported
+错误代码示例：
+
+@RequestMapping(value="/user/name", method=RequestMethod.GET) 
+  User findByUsername(final String userName, @RequestParam("address") final String address);
+注意：上面的userName参数没有用@RequestParam注解修饰，然后发送请求，会发现被调用的服务一直报Request method 'POST' not supported，
+我们明明使用的是GET方法，为什么被调用服务认为是POST方法了，原因是当userName没有被@RequestParam注解修饰时，会自动被当做request body来处理。
+只要有body，就会被feign认为是post请求，所以整个服务是被当作带有request parameter和body的post请求发送出去的。

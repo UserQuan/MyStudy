@@ -1,0 +1,22 @@
+第一：传参方式写法，当参数个数大于2个时，需要用@RequestParam
+ @PostMapping(value = "/configReader/configValue.do",headers = {"Accept=application/json","Content-Type=application/x-www-form-urlencoded"})
+ 
+ //正确的写法 String getMaxCount(@RequestParam("projectName") String projectName, @RequestParam("wordName") String wordName);
+ 
+ //错误的传参方式，会报错 String getMaxCount(String projectName, String wordName);报错代码为：nested exception is java.lang.IllegalStateException: Method has too many Body parameters: public abstract java.lang.String
+ 
+第二，@RequestParam 注解的正确用法（很重要！！） @PostMapping(value = "/configReader/configValue.do",headers = {"Accept=application/json","Content-Type=application/x-www-form-urlencoded"})
+
+//正确的写法 String getMaxCount(@RequestParam("projectName") String projectName, @RequestParam("wordName") String wordName);好多人没弄明白到底是把“projectName ”里面的参数赋值给projectName，还是把外面的projectname赋值给“projectName”，因为都写一样的，就区分不出来了。
+
+下面进行测试验证：（1）@RequestParam 作为数据发送方 参数配置时，
+实验如下：
+	实验一：数据发送请求方：@PostMapping(value = "/configReader/configValue.do",headers = {"Accept=application/json","Content-Type=application/x-www-form-urlencoded"}) String getMaxCount(@RequestParam("project") String projectName, @RequestParam("wordName") String wordName);
+	数据接收方：String getConfigValue(@RequestParam("projectName") String projectName, @RequestParam("wordName") String wordName)
+	结果：请求失败，因为@RequestParam("project") 与@RequestParam("projectName") 不一致
+	
+	实验二：数据发送请求方：@PostMapping(value = "/configReader/configValue.do",headers = {"Accept=application/json","Content-Type=application/x-www-form-urlencoded"}) String getMaxCount(@RequestParam("projectName") String project, @RequestParam("wordName") String wordName);
+	数据接收方：String getConfigValue(@RequestParam("projectName") String projectName, @RequestParam("wordName") String wordName)
+	结果：请求成功最终结论：@RequestParam("projectName") 是取的别名，String project 是用来接受值的，并将值赋值给别名@RequestParam("projectName") ，然后发送给外部，外部接收数据时，只认别名projectName，一样时才可以接收到数据。
+	（2）@RequestParam 作为数据接收方，参数配置时，参考https://www.cnblogs.com/silentdoer/archive/2017/08/31/7459395.html此时@RequestParam(name="userName", required = false) String[]userNames）  username是浏览器请求的参数，userNames 是最终接收的变量
+

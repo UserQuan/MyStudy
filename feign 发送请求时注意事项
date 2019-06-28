@@ -1,0 +1,68 @@
+------------------------------------------普通请求方式----------------------------------------------------------
+******1、如果 @RequestBody 只作用在一个参数上的时候-----》不符合接受参数格式，不推荐使用
+前端已json的格式传参  {"deviceCode":1111}
+
+public XnResult<DeviceDTO> getDeviceByDeviceCodeTest(@RequestBody String deviceCode) {
+        System.out.println("deviceCode="+deviceCode);
+        return null;
+    }
+后台接受的结果是：deviceCode={"deviceCode":1111}
+
+******2、如果 @RequestBody 作用在两个参数上，不可以用两个 ，会报错；正确方式定义bean来获取多个参数
+
+public XnResult<DeviceDTO> getDeviceByDeviceCodeTest(@RequestBody String deviceCode,@RequestBody String testType){}
+
+错误信息---》Resolved [org.springframework.http.converter.HttpMessageNotReadableException: Required request body is missing: public com.xiniao.common.base.results.XnResult<java.util.List<com.xiniao.basic.app.resource.reponse.CustomerInfoAppReponseDTO>> com.xiniao.basic.app.resource.CustomerInfoAppReadService.findCustomerInfosByJvCode(java.lang.String,java.lang.String)]
+
+
+******3、如果 @RequestBody bean作用在参数上，前端只能用json格式传参，否则获取不到参数
+ public XnResult<DeviceDTO> getDeviceByDeviceCodeTest2(@RequestBody DeviceTestDTO deviceTestDTO) {
+        System.out.println("deviceCode2="+deviceTestDTO.getDeviceCode());
+        System.out.println("testType2="+deviceTestDTO.getTestType());
+        return null;
+    }
+
+
+######1、传参方式是--》x-www-form-urlencoded 只能用post方式请求才能获取到参数，否则获取不到参数
+------------------------------------------普通请求方式----------------------------------------------------------
+
+
+
+
+
+
+
+
+
+
+
+-------======feign 发送请求时，传多个参数时的写法=======---------
+1、（1）get方式，  @RequestParam 必须要有否则报错
+@FeignClient(name = "microservice-provider-user")
+public interface UserFeignClient {
+ @RequestMapping(value = "/get", method = RequestMethod.GET)
+ public User get1(@RequestParam("id") Long id, @RequestParam("username") String username);
+}
+
+（2）get多个参数，多参数的URL也可使用Map来构建。当目标URL参数非常多的时候，可使用这种方式简化Feign接口的编写
+@FeignClient(name = "microservice-provider-user")
+public interface UserFeignClient {
+ @RequestMapping(value = "/get", method = RequestMethod.GET)
+ public User get2(@RequestParam Map<String, Object> map);
+}
+
+在调用时，可使用类似以下的代码。
+public User get(String username, String password) {
+ HashMap<String, Object> map = Maps.newHashMap();
+ map.put("id", "1");
+ map.put("username", "张三");
+ return this.userFeignClient.get2(map);
+
+2、post方式 ----》@RequestBody在 接口可以加也可以不加，但是在实现类中必须加，否则获取不到值，如果@RequestBody在接口中不加，默认是post请求方式
+	@FeignClient(name = "microservice-provider-user")
+public interface UserFeignClient {
+ @RequestMapping(value = "/post", method = RequestMethod.POST)
+ public User post(@RequestBody User user);
+}
+
+-------======feign 发送请求时，传多个参数时的写法=======---------
